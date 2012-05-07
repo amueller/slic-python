@@ -3,5 +3,5 @@ from distutils.extension import Extension
 from Cython.Distutils import build_ext
 
 setup(cmdclass={'build_ext': build_ext},
-    ext_modules=[Extension("slic", ["slic.pyx", "SLIC.cpp"],
+    ext_modules=[Extension("slic", ["_slic.pyx", "SLIC.cpp"],
         language="c++")])
