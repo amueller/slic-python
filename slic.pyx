@@ -22,7 +22,7 @@ def slic_s(np.ndarray[np.uint8_t, ndim=3] img, superpixel_size=300, compactness=
     ----------
     img : numpy array, dtype=uint8
         Original image, ARGB (or AXXX) format, A channel is ignored.
-        Needs to be C-Contagious
+        Needs to be C-Contiguous.
     superpixel_size: int, default=300
         Desired size for superpixel
     compactness: douple, default=10
@@ -35,11 +35,11 @@ def slic_s(np.ndarray[np.uint8_t, ndim=3] img, superpixel_size=300, compactness=
     """
 
     if (img.shape[2] != 3):
-        raise ValueError("Image needs to have 3.")
+        raise ValueError("Image needs to have 3 channels.")
     if np.isfortran(img):
         raise ValueError("The input image is not C-contiguous")
     cdef np.ndarray[np.uint8_t, ndim=3] img_ = np.empty((img.shape[0], img.shape[1], 4), dtype=np.uint8)
-    img_[:, :, :-1] = img
+    img_[:, :, 1:] = img
     cdef int h = img.shape[0]
     cdef int w = img.shape[1]
     cdef int * labels
@@ -60,8 +60,8 @@ def slic_n(np.ndarray[np.uint8_t, ndim=3] img, n_superpixels=500, compactness=10
     Parameters
     ----------
     img : numpy array, dtype=uint8
-        Original image RGBA (or XXXA) format, A channel is ignored.
-        Needs to be C-Contagious
+        Original image RGB.
+        Needs to be C-Contiguous
     n_superpixels: int, default=500
         Desired number of superpixels.
     compactness: douple, default=10
@@ -72,16 +72,18 @@ def slic_n(np.ndarray[np.uint8_t, ndim=3] img, n_superpixels=500, compactness=10
     labels : numpy array
 
     """
-    if (img.shape[2] != 4):
-        raise ValueError("Image needs to have 4 channels, eventhough the last is ignored.")
+    if (img.shape[2] != 3):
+        raise ValueError("Image needs to have 3 channels.")
     if np.isfortran(img):
         raise ValueError("The input image is not C-contiguous")
+    cdef np.ndarray[np.uint8_t, ndim=3] img_ = np.empty((img.shape[0], img.shape[1], 4), dtype=np.uint8)
+    img_[:, :, :-1] = img
     cdef int h = img.shape[0]
     cdef int w = img.shape[1]
     cdef int * labels
     cdef int n_labels
     cdef SLIC* slic = new SLIC()
-    slic.DoSuperpixelSegmentation_ForGivenNumberOfSuperpixels(<unsigned int *>img.data, w, h,
+    slic.DoSuperpixelSegmentation_ForGivenNumberOfSuperpixels(<unsigned int *>img_.data, w, h,
             labels, n_labels, n_superpixels, compactness)
     cdef np.npy_intp shape[2]
     shape[0] = h
@@ -98,18 +100,20 @@ def contours(np.ndarray[np.uint8_t, ndim=3] img, np.ndarray[np.int32_t, ndim=2] 
     ----------
     img : numpy array, dtype=uint8
         Original image.
-        Needs to be uint, ARGB (or AXXX) format, A channel is ignored.
-        Needs to be C-Contagious
+        Needs to be uint, RGB.
+        Needs to be C-Contiguous
     lables: numpy array, dtype=int
         Same width and height as image, 
     color: int
         color for boundaries.
     """
     cdef SLIC* slic = new SLIC()
-    assert(img.shape[2] == 4)
+    assert(img.shape[2] == 3)
     cdef int h = img.shape[0]
     cdef int w = img.shape[1]
     cdef int n_labels
-    slic.DrawContoursAroundSegments(<unsigned int **>&img.data, <int*>labels.data, w, h,
+    cdef np.ndarray[np.uint8_t, ndim=3] img_ = np.empty((img.shape[0], img.shape[1], 4), dtype=np.uint8)
+    img_[:, :, :-1] = img
+    slic.DrawContoursAroundSegments(<unsigned int **>&img_.data, <int*>labels.data, w, h,
             color)
-    return img
+    return img_
