@@ -27,23 +27,25 @@ def slic_s(np.ndarray[np.uint8_t, ndim=3] img, superpixel_size=300, compactness=
         Desired size for superpixel
     compactness: douple, default=10
         Degree of compactness of superpixels.
-    
+
     Returns
     -------
     labels : numpy array
-        
+
     """
 
-    if (img.shape[2] != 4):
-        raise ValueError("Image needs to have 4 channels, eventhough the first is ignored.")
+    if (img.shape[2] != 3):
+        raise ValueError("Image needs to have 3.")
     if np.isfortran(img):
         raise ValueError("The input image is not C-contiguous")
+    cdef np.ndarray[np.uint8_t, ndim=3] img_ = np.empty((img.shape[0], img.shape[1], 4), dtype=np.uint8)
+    img_[:, :, :-1] = img
     cdef int h = img.shape[0]
     cdef int w = img.shape[1]
     cdef int * labels
     cdef int n_labels
     cdef SLIC* slic = new SLIC()
-    slic.DoSuperpixelSegmentation_ForGivenSuperpixelSize(<unsigned int *>img.data, w, h,
+    slic.DoSuperpixelSegmentation_ForGivenSuperpixelSize(<unsigned int *>img_.data, w, h,
             labels, n_labels, superpixel_size, compactness)
     cdef np.npy_intp shape[2]
     shape[0] = h
@@ -58,20 +60,20 @@ def slic_n(np.ndarray[np.uint8_t, ndim=3] img, n_superpixels=500, compactness=10
     Parameters
     ----------
     img : numpy array, dtype=uint8
-        Original image ARGB (or AXXX) format, A channel is ignored.
+        Original image RGBA (or XXXA) format, A channel is ignored.
         Needs to be C-Contagious
     n_superpixels: int, default=500
         Desired number of superpixels.
     compactness: douple, default=10
         Degree of compactness of superpixels.
-    
+
     Returns
     -------
     labels : numpy array
-        
+
     """
     if (img.shape[2] != 4):
-        raise ValueError("Image needs to have 4 channels, eventhough the first is ignored.")
+        raise ValueError("Image needs to have 4 channels, eventhough the last is ignored.")
     if np.isfortran(img):
         raise ValueError("The input image is not C-contiguous")
     cdef int h = img.shape[0]
