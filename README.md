@@ -3,9 +3,4 @@ slic-python
 
 SLIC Superpixel implementation wrapper for Python.
 
-BUGFIX
-------
-
-There was a sort of major bug because I misunderstood the ARGB format used.
-The last channel, not the first, should be ignored.
-I simplified the functions now.
+I did this before I implemented SLIC for scikit-image. The implementation there is now quite mature and I would recommend using scikit-image, which provides multiple segmentation methods and a lot more, instead of using this code.
